@@ -1,12 +1,10 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain} from 'electron';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) { // eslint-disable-line global-require
   app.quit();
 }
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
 const createWindow = () => {
@@ -14,44 +12,153 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    fullscreen: false,
+    webPreferences: {
+      nodeIntegration : true
+    }
   });
 
-  // and load the index.html of the app.
+  // 加载index.html
   mainWindow.loadURL(`file://${__dirname}/index.html`);
-
-  // Open the DevTools.
+  // 调试工具
   mainWindow.webContents.openDevTools();
-
-  // Emitted when the window is closed.
   mainWindow.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
     mainWindow = null;
   });
+
+  ipcMain.on('getData', (e, ...data) => {
+    console.log(data);
+
+    // e.sender => 通过这对象再返回消息给渲染进程
+    e.sender.send('sendData', 1000);
+  });
+  mainWindow.webContents.send('hello', 'hello Yang');
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
-
-// Quit when all windows are closed.
 app.on('window-all-closed', () => {
-  // On OS X it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (mainWindow === null) {
     createWindow();
   }
 });
 
+
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
+
+
+// pidusage(process.pid, function (err, stats) {
+//   console.log(stats)
+//   // => {
+//   //   cpu: 10.0,            // percentage (from 0 to 100*vcore)
+//   //   memory: 357306368,    // bytes
+//   //   ppid: 312,            // PPID
+//   //   pid: 727,             // PID
+//   //   ctime: 867000,        // ms user + system time
+//   //   elapsed: 6650000,     // ms since the start of the process
+//   //   timestamp: 864000000  // ms since epoch
+//   // }
+//   cb()
+// })
+var username = 'cnmmm';
+
+var pidusage = require('pidusage')
+
+pidusage(6260, function (err, stats) {
+  LogPID(stats)
+})
+
+function LogPID(stats) {
+  console.log(stats);
+  console.log('aaaaaaaaaaa');
+  console.log(stats.memory / 1024);
+
+}
+
+
+// It supports also multiple pids
+// pidusage([727, 1234], function (err, stats) {
+//   console.log(stats)
+//   // => {
+//   //   727: {
+//   //     cpu: 10.0,            // percentage (from 0 to 100*vcore)
+//   //     memory: 357306368,    // bytes
+//   //     ppid: 312,            // PPID
+//   //     pid: 727,             // PID
+//   //     ctime: 867000,        // ms user + system time
+//   //     elapsed: 6650000,     // ms since the start of the process
+//   //     timestamp: 864000000  // ms since epoch
+//   //   },
+//   //   1234: {
+//   //     cpu: 0.1,             // percentage (from 0 to 100*vcore)
+//   //     memory: 3846144,      // bytes
+//   //     ppid: 727,            // PPID
+//   //     pid: 1234,            // PID
+//   //     ctime: 0,             // ms user + system time
+//   //     elapsed: 20000,       // ms since the start of the process
+//   //     timestamp: 864000000  // ms since epoch
+//   //   }
+//   // }
+// })
+
+// If no callback is given it returns a promise instead
+// const stats = await pidusage(process.pid)
+// console.log(stats)
+// => {
+//   cpu: 10.0,            // percentage (from 0 to 100*vcore)
+//   memory: 357306368,    // bytes
+//   ppid: 312,            // PPID
+//   pid: 727,             // PID
+//   ctime: 867000,        // ms user + system time
+//   elapsed: 6650000,     // ms since the start of the process
+//   timestamp: 864000000  // ms since epoch
+// }
+
+// Avoid using setInterval as they could overlap with asynchronous processing
+// function compute(cb) {
+//   pidusage(process.pid, function (err, stats) {
+//     console.log(stats)
+//     // => {
+//     //   cpu: 10.0,            // percentage (from 0 to 100*vcore)
+//     //   memory: 357306368,    // bytes
+//     //   ppid: 312,            // PPID
+//     //   pid: 727,             // PID
+//     //   ctime: 867000,        // ms user + system time
+//     //   elapsed: 6650000,     // ms since the start of the process
+//     //   timestamp: 864000000  // ms since epoch
+//     // }
+//     cb()
+//   })
+// }
+
+// function interval(time) {
+//   setTimeout(function () {
+//     compute(function () {
+//       interval(time)
+//     })
+//   }, time)
+// }
+
+// Compute statistics every second:
+//interval(1000)
+
+// Above example using async/await
+// const compute = async () => {
+//   const stats = await pidusage(process.pid)
+//   // do something
+// }
+
+// Compute statistics every second:
+// const interval = async (time) => {
+//   setTimeout(async () => {
+//     await compute()
+//     interval(time)
+//   }, time)
+// }
+// interval(1000)

@@ -2,9 +2,35 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title></title>
+    <title>title</title>
+    <!-- <link rel="stylesheet" href="css/index.css"> -->
   </head>
   <body>
     Well hey there!!!
+    <h1>index1</h1>
+    <button>点击</button>
+    <script>
+      const remote = require('electron').remote;
+      const ipcRenderer = require('electron').ipcRenderer;
+
+      //该对象有一个global方法，可以获取主进程中的数据
+      console.log(remote.getGlobal('username'));
+      const btn = document.querySelectorAll('button')
+
+      btn[0].onclick = function () {
+        ipcRenderer.send('getData', 'ssssss')
+      }
+
+      //监听主进程的方法
+      ipcRenderer.on('sendData', (e, ...data) => {
+        console.log(data);
+      })
+
+      //监听主进程主动发送数据的方法
+      ipcRenderer.on('hello', (e, ...data) => {
+        console.log(data);
+      })
+    </script>
+    
   </body>
 </html>
